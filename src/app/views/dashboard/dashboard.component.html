@@ -1,0 +1,162 @@
+<!-- <app-widgets-dropdown /> -->
+
+<!-- Appliance Widgets -->
+<!-- Appliances Title -->
+<h2 class="mb-4 text-uppercase">{{ household.householdName }}</h2>
+<h4 class="mb-4">Appliances</h4>
+
+<!-- Appliance Widgets Displayed as Cards -->
+<c-row class="g-4">
+  <c-col *ngFor="let appliance of household.appliances" sm="6" md="4" lg="3">
+    <c-card class="mb-4" (click)="openApplianceModal(applianceModal, appliance)">
+      <c-card-header class="bg-primary text-white">{{ appliance.appliance | titlecase }}</c-card-header>
+      <c-card-body>
+        <p class="mb-2"><strong>MAC Address:</strong></p>
+        <p>{{ appliance.macAddress }}</p>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
+
+<!-- Modal for Appliance Settings -->
+<ng-template #applianceModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Appliance Settings</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="applianceForm" (ngSubmit)="submitApplianceSettings(modal)">
+      <!-- Appliance Name -->
+      <div class="mb-3">
+        <strong>Appliance Name:</strong> {{ selectedAppliance?.appliance }}
+      </div>
+
+      <!-- Appliance ID (MAC Address) -->
+      <div class="mb-3">
+        <strong>Appliance ID:</strong> {{ selectedAppliance?.macAddress }}
+      </div>
+
+      <!-- Appliance Priority Level -->
+      <div class="mb-3">
+        <label for="priority" class="form-label">Appliance Priority</label>
+        <select id="priority" class="form-control" formControlName="priority">
+          <option value="low">Low</option>
+          <option value="med">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+
+      <!-- Power Level -->
+      <div class="mb-3">
+        <label for="powerLevel" class="form-label">Power Level</label>
+        <select
+          id="powerLevel"
+          class="form-control"
+          formControlName="powerLevel"
+          (change)="onPowerLevelChange()"
+        >
+          <option value="off">Off</option>
+          <option value="level_1">Level 1</option>
+          <option value="level_2">Level 2</option>
+          <option value="level_3">Level 3</option>
+          <option value="level_4">Level 4</option>
+          <option value="level_5">Level 5</option>
+        </select>
+      </div>
+
+      <!-- Scheduled Turn On Time -->
+      <div class="mb-3">
+        <label for="turnOnTime" class="form-label">Scheduled Runtime</label>
+        <input id="turnOnTime" type="time" class="form-control" formControlName="turnOnTime">
+      </div>
+
+      <!-- Scheduled Runtime Level -->
+      <div class="mb-3">
+        <label for="powerLevel" class="form-label">Scheduled Runtime Level</label>
+        <select
+          id="turnOnTimeLevel"
+          class="form-control"
+          formControlName="turnOnTimeLevel"
+        >
+          <option value="level_1">Level 1</option>
+          <option value="level_2">Level 2</option>
+          <option value="level_3">Level 3</option>
+          <option value="level_4">Level 4</option>
+          <option value="level_5">Level 5</option>
+        </select>
+      </div>
+
+      <!-- Scheduled Runtime Duration -->
+      <div class="mb-3">
+        <label for="duration" class="form-label">Scheduled Runtime Duration (in hours)</label>
+        <input id="duration" type="number" class="form-control" formControlName="duration">
+      </div>
+
+      <div class="text-end">
+        <button cButton color="success" type="submit">Submit</button>
+      </div>
+    </form>
+  </div>
+</ng-template>
+
+
+<!-- <div *ngFor="let appliance of household.appliances">
+  <h4>{{ appliance.appliance }} ({{ appliance.macAddress }}) - {{ currentDate }}</h4>
+  <p>Chart data exists: {{ applianceCharts[appliance.macAddress] ? 'Yes' : 'No' }}</p>
+  <c-chart
+    *ngIf="applianceCharts[appliance.macAddress]"
+    [type]="applianceCharts[appliance.macAddress].type"
+    [data]="applianceCharts[appliance.macAddress].data"
+    [options]="applianceCharts[appliance.macAddress].options"
+    [height]="300"
+  ></c-chart>
+</div> -->
+
+ <c-card class="my-4">
+  <c-card-body>
+    <c-row>
+      <c-col sm="5">
+        <h4 class="card-title mb-0" id="traffic">Energy Usage & Pricing</h4>
+        <div class="small text-body-secondary">Real-time Data</div>
+      </c-col>
+      <c-col class="d-none d-md-block" sm="7">
+        <button cButton class="float-end" color="primary" aria-label="Download">
+          <svg cIcon name="cilCloudDownload"></svg>
+        </button>
+        <form [formGroup]="trafficRadioGroup">
+          <c-button-group class="float-end me-3" role="group">
+            
+            <input
+              class="btn-check"
+              formControlName="trafficRadio"
+              type="radio"
+              value="Hour"
+              id="radioHour"
+            />
+            <label
+              (click)="setTrafficPeriod('Hour')"
+              cButton
+              cFormCheckLabel
+              color="secondary"
+              variant="outline"
+              for="radioHour"
+            >
+              Hour
+            </label>
+            
+          </c-button-group>
+        </form>
+      </c-col>
+    </c-row>
+    <c-chart
+      *ngIf="chartData"
+      [data]="mainChart.data"
+      [height]="300"
+      [ngStyle]="{ 'marginTop.px': 40 }"
+      [options]="mainChart.options"
+      [type]="mainChart.type"
+    >
+      Main chart
+    </c-chart>
+  </c-card-body>
+</c-card> 

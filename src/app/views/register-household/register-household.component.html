@@ -1,0 +1,187 @@
+<!-- Household Cards Display -->
+<div *ngIf="!loading && existingHouseholds.length > 0">
+    <h4 class="mb-4">Existing Households</h4>
+    <c-row>
+      <c-col *ngFor="let household of existingHouseholds" sm="12" md="6" lg="4">
+        <c-card class="mb-4" style="min-height: 300px; display: flex; flex-direction: column; justify-content: space-between;">
+          <c-card-header>
+            <h5>{{ household.householdName }}</h5>
+          </c-card-header>
+          <c-card-body>
+            <p><strong>Appliances:</strong></p>
+            <ul>
+              <li *ngFor="let appliance of household.appliances">
+                {{ appliance.appliance }} (MAC: {{ appliance.macAddress }})
+              </li>
+            </ul>
+            <p *ngIf="household.priceBasedLoadSheddingActive">
+              <strong>Load Shedding Active</strong><br>
+              Start: {{ household.loadSheddingSchedule.startTime }} - End: {{ household.loadSheddingSchedule.endTime }}
+            </p>
+            <p><strong>Circuits:</strong></p>
+            <ul>
+              <li *ngFor="let circuit of household.circuits">
+                Ampere: {{ circuit.ampere }}, Circuits: {{ circuit.circuits }}, Threshold: {{ circuit.threshold }}
+              </li>
+            </ul>
+          </c-card-body>
+          <c-card-footer>
+            <button cButton color="primary" (click)="navigateToDashboard(household)">
+              Go to Dashboard
+            </button>
+          </c-card-footer>
+        </c-card>
+      </c-col>
+    </c-row>
+  </div>
+  
+  <!-- Button to open modal for adding new household -->
+  <div class="text-end mb-4">
+    <button cButton color="primary" (click)="openAddHouseholdModal(addHouseholdModal)">
+      Add Household Account
+    </button>
+  </div>
+  
+  <!-- Modal for Adding Household -->
+  <ng-template #addHouseholdModal let-modal>
+    <div class="modal-header">
+      <h5 class="modal-title">Add Household Account</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="householdForm" (ngSubmit)="submitHousehold(modal)">
+        <!-- Household Name -->
+        <c-row class="mb-3">
+          <c-col>
+            <label for="householdName" class="form-label">Household Name</label>
+            <input
+              id="householdName"
+              class="form-control"
+              formControlName="householdName"
+              placeholder="Enter household name"
+              required
+            />
+          </c-col>
+        </c-row>
+  
+        <!-- Appliances Section -->
+        <h5>Appliances</h5>
+        <div formArrayName="appliances">
+          <div *ngFor="let appliance of appliances.controls; let i = index" [formGroupName]="i" class="mb-3">
+            <c-card>
+              <c-card-body>
+                <c-row class="mb-3">
+                  <c-col sm="6">
+                    <label for="macAddress-{{i}}" class="form-label">MAC Address</label>
+                    <input
+                      id="macAddress-{{i}}"
+                      class="form-control"
+                      formControlName="macAddress"
+                      placeholder="XX:XX:XX:XX:XX:XX"
+                    />
+                  </c-col>
+                  <c-col sm="6">
+                    <label for="appliance-{{i}}" class="form-label">Select Appliance</label>
+                    <select id="appliance-{{i}}" class="form-control" formControlName="appliance">
+                      <option *ngFor="let appliance of appliancesList" [value]="appliance.value">
+                        {{ appliance.label }}
+                      </option>
+                    </select>
+                  </c-col>
+                </c-row>
+                <button cButton color="danger" (click)="removeAppliance(i)" type="button">Remove Appliance</button>
+              </c-card-body>
+            </c-card>
+          </div>
+          <button cButton color="primary" (click)="addAppliance()" type="button" class="my-3">Add Appliance</button>
+        </div>
+  
+        <!-- Price-based Load Shedding Section -->
+        <h5 class="mt-4">Price-Based Load Shedding</h5>
+        <c-row class="align-items-center mb-3">
+          <c-col sm="2">
+            <label for="priceBasedLoadSheddingActive" class="form-label">Enable</label>
+          </c-col>
+          <c-col sm="4">
+            <input
+              id="priceBasedLoadSheddingActive"
+              type="checkbox"
+              formControlName="priceBasedLoadSheddingActive"
+            />
+          </c-col>
+        </c-row>
+        <div *ngIf="householdForm.get('priceBasedLoadSheddingActive')?.value">
+            <c-row class="mb-3" formGroupName="loadSheddingSchedule">
+              <c-col sm="6">
+                <label for="startTime" class="form-label">Start Time</label>
+                <input
+                  id="startTime"
+                  type="number"
+                  class="form-control"
+                  formControlName="startTime"
+                  placeholder="Start Hour (0-23)"
+                />
+              </c-col>
+              <c-col sm="6">
+                <label for="endTime" class="form-label">End Time</label>
+                <input
+                  id="endTime"
+                  type="number"
+                  class="form-control"
+                  formControlName="endTime"
+                  placeholder="End Hour (0-23)"
+                />
+              </c-col>
+            </c-row>
+        </div>
+  
+        <!-- Circuits Section -->
+        <h5>Circuits</h5>
+        <div formArrayName="circuits">
+          <div *ngFor="let circuit of circuits.controls; let i = index" [formGroupName]="i" class="mb-3">
+            <c-card>
+              <c-card-body>
+                <c-row class="mb-3">
+                  <c-col sm="4">
+                    <label for="ampere-{{i}}" class="form-label">Ampere</label>
+                    <input
+                      id="ampere-{{i}}"
+                      class="form-control"
+                      formControlName="ampere"
+                      placeholder="e.g., 20A"
+                    />
+                  </c-col>
+                  <c-col sm="4">
+                    <label for="circuits-{{i}}" class="form-label">Circuits</label>
+                    <input
+                      id="circuits-{{i}}"
+                      type="number"
+                      class="form-control"
+                      formControlName="circuits"
+                      placeholder="Number of Circuits"
+                    />
+                  </c-col>
+                  <c-col sm="4">
+                    <label for="threshold-{{i}}" class="form-label">Threshold</label>
+                    <input
+                      id="threshold-{{i}}"
+                      class="form-control"
+                      formControlName="threshold"
+                      placeholder="e.g., 80%"
+                    />
+                  </c-col>
+                </c-row>
+                <button cButton color="danger" (click)="removeCircuit(i)" type="button">Remove Circuit</button>
+              </c-card-body>
+            </c-card>
+          </div>
+          <button cButton color="primary" (click)="addCircuit()" type="button" class="my-3">Add Circuit</button>
+        </div>
+  
+        <div class="text-end">
+          <button cButton color="success" type="submit">Submit Household</button>
+        </div>
+      </form>
+    </div>
+  </ng-template>
+  
