@@ -41,7 +41,15 @@
               "src/scss/styles.scss"
             ],
             "scripts": [],
-            "allowedCommonJsDependencies": []
+            "allowedCommonJsDependencies": [
+              "global",
+              "qrcode",
+              "fast-xml-parser",
+              "buffer",
+              "lodash/kebabCase.js",
+              "lodash/pickBy.js",
+              "lodash/merge.js"
+            ]
           },
           "configurations": {
             "production": {
