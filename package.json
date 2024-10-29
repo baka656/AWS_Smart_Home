@@ -11,7 +11,7 @@
   },
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --prod",
+    "start": "ng serve --configuration production",
     "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
