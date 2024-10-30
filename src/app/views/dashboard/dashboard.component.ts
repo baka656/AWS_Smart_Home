@@ -38,8 +38,9 @@ import { PubSub } from '@aws-amplify/pubsub';
 import { WidgetStatAComponent } from '@coreui/angular'; 
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { Amplify } from 'aws-amplify';
-
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+
 
 Amplify.configure({
   Auth: {
@@ -73,7 +74,7 @@ interface TelemetryData {
   templateUrl: 'dashboard.component.html',
   styleUrls: ['dashboard.component.scss'],
   standalone: true,
-  imports: [WidgetsDropdownComponent, TextColorDirective,CommonModule, WidgetStatAComponent ,CardComponent, CardBodyComponent, RowComponent, ColComponent, ButtonDirective, IconDirective, ReactiveFormsModule, ButtonGroupComponent, FormCheckLabelDirective, ChartjsComponent, NgStyle, CardFooterComponent, GutterDirective, ProgressBarDirective, ProgressComponent, WidgetsBrandComponent, CardHeaderComponent, TableDirective, AvatarComponent, AmplifyAuthenticatorModule, RouterOutlet]
+  imports: [WidgetsDropdownComponent, MatSnackBarModule ,TextColorDirective,CommonModule, WidgetStatAComponent ,CardComponent, CardBodyComponent, RowComponent, ColComponent, ButtonDirective, IconDirective, ReactiveFormsModule, ButtonGroupComponent, FormCheckLabelDirective, ChartjsComponent, NgStyle, CardFooterComponent, GutterDirective, ProgressBarDirective, ProgressComponent, WidgetsBrandComponent, CardHeaderComponent, TableDirective, AvatarComponent, AmplifyAuthenticatorModule, RouterOutlet]
 })
 
 export class DashboardComponent implements OnInit {
@@ -89,7 +90,7 @@ export class DashboardComponent implements OnInit {
   household: any;
   applianceData: { [appliance_id: string]: { timestamps: number[]; powerUsages: number[] } } = {};
   minutePrices: number[] = []; // Prices for each minute of the day
-  selectedPeriod: 'Minute' | 'Hour' | 'Day' = 'Minute';
+  selectedPeriod: 'Hour' = 'Hour';
   chartData: any;
 
   readonly #destroyRef: DestroyRef = inject(DestroyRef);
@@ -105,10 +106,10 @@ export class DashboardComponent implements OnInit {
   });
   public chart: Array<IChartProps> = [];
   public trafficRadioGroup = new FormGroup({
-    trafficRadio: new FormControl('Month')
+    trafficRadio: new FormControl('Hour')
   });
 
-  constructor(private http: HttpClient , private router: Router, private modalService: NgbModal, private fb: FormBuilder) {
+  constructor(private snackBar: MatSnackBar, private http: HttpClient , private router: Router, private modalService: NgbModal, private fb: FormBuilder) {
     this.applianceForm = this.fb.group({
       priority: ['low'],
       powerLevel: ['off'],
@@ -129,6 +130,15 @@ export class DashboardComponent implements OnInit {
     } else {
       console.error('No household data available');
     }
+    fetchAuthSession().then((info) => {
+      const cognitoIdentityId = info.identityId;
+      console.log("Cognito Identity: ",cognitoIdentityId);
+      });
+    pubsub.subscribe({topics: '#'}).subscribe({
+      next: (data) => console.log('Message received', data),
+      error: (error) => console.error(error),
+      complete: () => console.log('Done')
+    });
     this.initializeMinutePrices();
     // After fetching telemetry data
     this.fetchTelemetryData().then(() => {
@@ -141,11 +151,7 @@ export class DashboardComponent implements OnInit {
     console.log("Telemetry Data: ", this.telemetryData);
     this.initCharts();
     this.updateChartOnColorModeChange();
-    pubsub.subscribe({topics: '#'}).subscribe({
-      next: (data) => console.log('Message received', data),
-      error: (error) => console.error(error),
-      complete: () => console.log('Done')
-    });
+    
   }
 
   initCharts(): void {
@@ -224,36 +230,16 @@ export class DashboardComponent implements OnInit {
     let labels: string[] = [];
     const datasets: any[] = [];
 
-    if (period === 'Minute') {
-      const labelsSet = new Set<number>();
-      for (const appliance_id in this.applianceData) {
-        this.applianceData[appliance_id].timestamps.forEach(ts => labelsSet.add(ts));
-      }
-      labelsArray = Array.from(labelsSet).sort((a, b) => a - b);
-      labels = labelsArray.map(timestamp => {
-        const date = new Date(timestamp * 1000);
-        return date.toTimeString().substr(0, 5); // "HH:MM"
-      });
-    } else if (period === 'Hour') {
+     if (period === 'Hour') {
       labelsArray = Array.from({ length: 24 }, (_, i) => i);
       labels = labelsArray.map(hour => `${hour.toString().padStart(2, '0')}:00`);
-    } else if (period === 'Day') {
-      labelsArray = [1];
-      labels = ['Today'];
     }
 
     // Prepare datasets for each appliance
     for (const appliance_id in this.applianceData) {
       let data: number[] = [];
 
-      if (period === 'Minute') {
-        const powerUsageMap = new Map<number, number>();
-        this.applianceData[appliance_id].timestamps.forEach((ts, idx) => {
-          powerUsageMap.set(ts, this.applianceData[appliance_id].powerUsages[idx]);
-        });
-
-        data = labelsArray.map(ts => powerUsageMap.get(ts) || 0);
-      } else if (period === 'Hour') {
+      if (period === 'Hour') {
         const hourlyData = new Array(24).fill(0);
         this.applianceData[appliance_id].timestamps.forEach((ts, idx) => {
           const date = new Date(ts * 1000);
@@ -261,10 +247,7 @@ export class DashboardComponent implements OnInit {
           hourlyData[hour] += this.applianceData[appliance_id].powerUsages[idx];
         });
         data = hourlyData;
-      } else if (period === 'Day') {
-        const totalUsage = this.applianceData[appliance_id].powerUsages.reduce((a, b) => a + b, 0);
-        data = [totalUsage];
-      }
+      } 
 
       datasets.push({
         label: this.household.appliances.find((a: { macAddress: string; }) => a.macAddress === appliance_id)?.appliance || appliance_id,
@@ -278,20 +261,9 @@ export class DashboardComponent implements OnInit {
     // Prepare price data
     let priceData: number[] = [];
 
-    if (period === 'Minute') {
-      priceData = labelsArray.map(ts => {
-        const date = new Date(ts * 1000);
-        const hour = date.getHours();
-        const minute = date.getMinutes();
-        const minuteIndex = hour * 60 + minute;
-        return this.minutePrices[minuteIndex];
-      });
-    } else if (period === 'Hour') {
+    if (period === 'Hour') {
       priceData = this.prices;
-    } else if (period === 'Day') {
-      const averagePrice = this.prices.reduce((a, b) => a + b, 0) / this.prices.length;
-      priceData = [averagePrice];
-    }
+    } 
 
     datasets.push({
       label: 'Price',
@@ -359,7 +331,7 @@ export class DashboardComponent implements OnInit {
   }
 
   setTrafficPeriod(value: string): void {
-    this.selectedPeriod = value as 'Minute' | 'Hour' | 'Day';
+    this.selectedPeriod = value as 'Hour';
     this.prepareChartData();
   }
   async currentAuthenticatedUser() {
@@ -455,6 +427,11 @@ export class DashboardComponent implements OnInit {
       console.log('Message sent to IoT Core:', message);
       modal.close();
       this.timestamp = null
+      this.snackBar.open('Data Sent to Appliance '+this.selectedAppliance.appliance, 'Close', {
+        duration: 3000,
+        verticalPosition: 'top',
+        horizontalPosition: 'center'
+      });
     } catch (error) {
       console.error('Error sending message to IoT Core:', error);
     }

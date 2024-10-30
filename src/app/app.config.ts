@@ -8,11 +8,12 @@ import {
   withRouterConfig,
   withViewTransitions
 } from '@angular/router';
-
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { DropdownModule, SidebarModule } from '@coreui/angular';
 import { IconSetService } from '@coreui/icons-angular';
 import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -31,6 +32,6 @@ export const appConfig: ApplicationConfig = {
     ),
     importProvidersFrom(SidebarModule, DropdownModule),
     IconSetService,
-    provideAnimations()
+    provideAnimations(), provideAnimationsAsync()
   ]
 };

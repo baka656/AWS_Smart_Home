@@ -1,11 +1,12 @@
 import { Routes } from '@angular/router';
 import { DefaultLayoutComponent } from './layout';
 import { AuthService } from './auth.service';
-import {LoginauthService} from './loginauth.service'
+import {LoginauthService} from './loginauth.service';
+import {DashboardAuthService} from './dashboard-auth.service';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'login',
+    redirectTo: 'registerHousehold',
     pathMatch: 'full'
   },
   {
@@ -17,11 +18,13 @@ export const routes: Routes = [
     children: [
       {
         path: 'registerHousehold',
-        loadChildren: () => import('./views/register-household/routes').then((m) => m.routes)
+        loadChildren: () => import('./views/register-household/routes').then((m) => m.routes),
+        canActivate: [AuthService]
       },
       {
         path: 'dashboard',
-        loadChildren: () => import('./views/dashboard/routes').then((m) => m.routes)
+        loadChildren: () => import('./views/dashboard/routes').then((m) => m.routes),
+        canActivate: [DashboardAuthService]
       },
       {
         path: 'charts',
@@ -56,14 +59,16 @@ export const routes: Routes = [
     loadComponent: () => import('./views/register-household/register-household.component').then(m => m.RegisterHouseholdComponent),
     data: {
       title: 'Register Household Accounts'
-    }
+    },
+    canActivate: [AuthService]
   },
   {
     path: 'login',
     loadComponent: () => import('./views/pages/login/login.component').then(m => m.LoginComponent),
     data: {
       title: 'Login Page'
-    }
+    },
+    canActivate: [LoginauthService]
   },
   { path: '**', redirectTo: 'login' }
 ];

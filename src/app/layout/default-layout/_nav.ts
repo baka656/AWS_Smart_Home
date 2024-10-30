@@ -7,24 +7,6 @@ export const navItems: INavData[] = [
     iconComponent: { name: 'cil-home' }
   },
   {
-    name: 'Components',
-    title: true
-  },
-  {
-    name: 'Charts',
-    iconComponent: { name: 'cil-chart-pie' },
-    url: '/charts'
-  },
-  {
-    name: 'Widgets',
-    url: '/widgets',
-    iconComponent: { name: 'cil-calculator' },
-    badge: {
-      color: 'info',
-      text: 'NEW'
-    }
-  },
-  {
     title: true,
     name: 'Extras'
   },
@@ -33,11 +15,6 @@ export const navItems: INavData[] = [
     url: '/login',
     iconComponent: { name: 'cil-star' },
     children: [
-      {
-        name: 'Login',
-        url: '/login',
-        icon: 'nav-icon-bullet'
-      },
       {
         name: 'Error 404',
         url: '/404',
